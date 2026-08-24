@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  id          String        @id @default(uuid())
+  email       String        @unique
+  name        String
+  avatar      String?
+  role        String        @default("admin")
+  isActive    Boolean       @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  activities  ActivityLog[]
+  otpTokens   OtpToken[]
+
+  @@map("admins")
+}
+
+model OtpToken {
+  id          String   @id @default(uuid())
+  code        String
+  email       String
+  expiresAt   DateTime
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  isUsed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  adminId     String
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([adminId])
+  @@map("otp_tokens")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.VarChar(500)
+  adminId   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model HeroSection {
+  id              String       @id @default(uuid())
+  greeting        String       @default("Hello, I'm")
+  name            String       @default("Your Name")
+  jobTitle        String       @default("Full Stack Developer")
+  description     String       @db.Text
+  ctaText         String       @default("View My Work")
+  ctaLink         String       @default("#projects")
+  backgroundImage String?
+  backgroundMusic String?
+  pixelCharacter  String?
+  heroImage       String?
+  techStack       String?      @db.Text
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  socialLinks     SocialLink[]
+
+  @@map("hero_sections")
+}
+
+model SocialLink {
+  id        String      @id @default(uuid())
+  platform  String
+  url       String
+  icon      String?
+  sortOrder Int         @default(0)
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  heroId    String
+  hero      HeroSection @relation(fields: [heroId], references: [id], onDelete: Cascade)
+
+  @@index([heroId])
+  @@map("social_links")
+}
+
+model AboutSection {
+  id              String     @id @default(uuid())
+  photo           String?
+  name            String     @default("Your Name")
+  shortIntro      String     @db.Text
+  longDescription String     @db.Text
+  resumeUrl       String?
+  cvUrl           String?
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  timelines       Timeline[]
+
+  @@map("about_sections")
+}
+
+model Timeline {
+  id           String       @id @default(uuid())
+  title        String
+  organization String
+  description  String?      @db.Text
+  type         TimelineType
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean      @default(false)
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  aboutId      String
+  about        AboutSection @relation(fields: [aboutId], references: [id], onDelete: Cascade)
+
+  @@index([aboutId])
+  @@index([type])
+  @@map("timelines")
+}
+
+model Project {
+  id               String         @id @default(uuid())
+  coverImage       String?
+  title            String
+  slug             String         @unique
+  category         String
+  shortDescription String         @db.Text
+  fullDescription  String         @db.Text
+  techStack        String         @db.Text
+  githubUrl        String?
+  liveUrl          String?
+  featured         Boolean        @default(false)
+  status           ProjectStatus  @default(DRAFT)
+  startDate        DateTime?
+  endDate          DateTime?
+  sortOrder        Int            @default(0)
+  seoTitle         String?
+  seoDescription   String?        @db.Text
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  images           ProjectImage[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([status])
+  @@index([featured])
+  @@map("projects")
+}
+
+model ProjectImage {
+  id        String   @id @default(uuid())
+  url       String
+  caption   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_images")
+}
+
+model Skill {
+  id        String        @id @default(uuid())
+  name      String
+  icon      String?
+  category  SkillCategory
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([category])
+  @@map("skills")
+}
+
+model Service {
+  id        String   @id @default(uuid())
+  title     String
+  shortDesc String   @db.Text
+  icon      String   @default("Code2")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("services")
+}
+
+model ContactSubmission {
+  id        String             @id @default(uuid())
+  fullName  String             @db.VarChar(100)
+  phone     String             @db.VarChar(30)
+  email     String
+  message   String             @db.Text
+  status    SubmissionStatus   @default(PENDING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([status])
+  @@map("contact_submissions")
+}
+
+model ContactInfo {
+  id                 String   @id @default(uuid())
+  whatsapp           String?
+  email              String?
+  linkedin           String?
+  github             String?
+  instagram          String?
+  discord            String?
+  telegram           String?
+  googleMaps         String?  @db.Text
+  availabilityStatus String   @default("Available for work")
+  isAvailable        Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("contact_info")
+}
+
+model GuestMessage {
+  id        String        @id @default(uuid())
+  name      String        @db.VarChar(50)
+  message   String        @db.VarChar(84)
+  status    MessageStatus @default(PENDING)
+  pinned    Boolean       @default(false)
+  pinnedAt  DateTime?
+  rotation  Float         @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status])
+  @@index([pinned])
+  @@map("guest_messages")
+}
+
+model Visitor {
+  id        String   @id @default(uuid())
+  ipAddress String?
+  country   String?
+  city      String?
+  browser   String?
+  os        String?
+  device    String?
+  page      String
+  referrer  String?
+  sessionId String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([country])
+  @@index([page])
+  @@map("visitors")
+}
+
+model MediaFile {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  folder       String   @default("/")
+  path         String
+  url          String
+  width        Int?
+  height       Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([folder])
+  @@index([mimeType])
+  @@map("media_files")
+}
+
+model SiteSettings {
+  id                String   @id @default(uuid())
+  siteName          String   @default("VIA")
+  logo              String?
+  favicon           String?
+  seoTitle          String?
+  seoDescription    String?  @db.Text
+  metaTags          String?  @db.Text
+  googleAnalyticsId String?
+  theme             String   @default("dark")
+  maintenanceMode   Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String?
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+enum SkillCategory {
+  PROGRAMMING_LANGUAGE
+  FRAMEWORK
+  LIBRARY
+  DATABASE
+  DEVOPS
+  CLOUD
+  CYBERSECURITY
+  TOOLS
+  OTHERS
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MessageStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+enum TimelineType {
+  EXPERIENCE
+  EDUCATION
+}
+
+enum SubmissionStatus {
+  PENDING
+  READ
+  ARCHIVED
+}

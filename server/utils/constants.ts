@@ -1,0 +1,10 @@
+export const UPLOAD_DIR = 'uploads';
+export const UPLOAD_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+export const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+export const MESSAGE_MAX_LENGTH = 84;
+export const MESSAGE_NAME_MAX_LENGTH = 50;
+export const OTP_CODE_LENGTH = 6;
+export const PAGINATION_DEFAULT_PAGE = 1;
+export const PAGINATION_DEFAULT_LIMIT = 12;
+export const PAGINATION_MAX_LIMIT = 100;
