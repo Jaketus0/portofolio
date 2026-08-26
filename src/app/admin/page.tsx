@@ -9,6 +9,7 @@ import { useSocket } from '../../providers/socket-provider';
 import { Users, Eye, MousePointerClick, MessageSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Link from 'next/link';
+import { ActivityLog } from '../../types';
 
 export default function AdminDashboardPage() {
   const { onlineVisitors } = useSocket();
@@ -26,6 +27,14 @@ export default function AdminDashboardPage() {
     queryFn: async () => {
       const { data } = await api.get('/messages');
       return data.data;
+    },
+  });
+
+  const { data: activityLogs } = useQuery({
+    queryKey: ['admin-activity-log'],
+    queryFn: async () => {
+      const { data } = await api.get('/activity-log?limit=5');
+      return data.data as ActivityLog[];
     },
   });
 
@@ -71,9 +80,30 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <AdminCard title="Recent Activity" className="min-h-[300px]">
-          <div className="flex h-full flex-col items-center justify-center text-center text-muted">
-            <p className="text-sm">No recent activity</p>
-          </div>
+          {activityLogs && activityLogs.length > 0 ? (
+            <div className="space-y-3">
+              {activityLogs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between border-b border-black/5 pb-2 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'inline-block rounded px-1.5 py-0.5 text-[10px] font-medium',
+                      log.action === 'CREATE' && 'text-emerald-600 bg-emerald-50',
+                      log.action === 'UPDATE' && 'text-blue-600 bg-blue-50',
+                      log.action === 'DELETE' && 'text-red-600 bg-red-50',
+                    )}>
+                      {log.action}
+                    </span>
+                    <span className="text-xs text-foreground">{log.entity}</span>
+                  </div>
+                  <span className="text-[10px] text-muted">{new Date(log.createdAt).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center text-center text-muted">
+              <p className="text-sm">No recent activity</p>
+            </div>
+          )}
         </AdminCard>
 
         <AdminCard title="Quick Actions" className="min-h-[300px]">
@@ -86,6 +116,11 @@ export default function AdminDashboardPage() {
             <Link href="/admin/messages">
               <AdminButton variant="secondary" className="h-28 w-full flex-col py-4">
                 <span className="text-xs">Check Inbox</span>
+              </AdminButton>
+            </Link>
+            <Link href="/admin/social-links">
+              <AdminButton variant="secondary" className="h-28 w-full flex-col py-4">
+                <span className="text-xs">Social Links</span>
               </AdminButton>
             </Link>
             <Link href="/admin/settings">

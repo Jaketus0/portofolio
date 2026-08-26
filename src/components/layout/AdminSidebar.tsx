@@ -17,17 +17,23 @@ import {
   Settings,
   LogOut,
   Mail,
+  Link2,
+  Activity,
+  FileText,
 } from 'lucide-react';
 
 const MENU_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/hero', label: 'Hero / Profile', icon: User },
+  { href: '/admin/social-links', label: 'Social Links', icon: Link2 },
   { href: '/admin/services', label: 'Services', icon: Wrench },
+  { href: '/admin/cv', label: 'CV / Resume', icon: FileText },
   { href: '/admin/projects', label: 'Projects', icon: Briefcase },
   { href: '/admin/contact', label: 'Contact Info', icon: Mail },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/contact-submissions', label: 'Contact Form', icon: Send },
   { href: '/admin/media', label: 'Media Library', icon: ImageIcon },
+  { href: '/admin/activity-log', label: 'Activity Log', icon: Activity },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

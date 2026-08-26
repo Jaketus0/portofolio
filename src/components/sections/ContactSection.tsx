@@ -13,7 +13,7 @@ import {
   MessageCircle,
   RefreshCw,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import api from '../../lib/api';
@@ -35,7 +35,7 @@ const contactSchema = z.object({
     .string()
     .min(10, 'Message must be at least 10 characters')
     .max(3000, 'Message must be at most 3000 characters'),
-  captchaAnswer: z.string().min(1, 'Solve the captcha to submit'),
+  captchaAnswer: z.string().optional(),
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
@@ -66,6 +66,7 @@ export function ContactSection() {
 
   const [captcha, setCaptcha] = useState<CaptchaChallenge | null>(null);
   const [captchaLoading, setCaptchaLoading] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [sent, setSent] = useState(false);
 
@@ -73,6 +74,7 @@ export function ContactSection() {
     register,
     handleSubmit,
     reset,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -92,11 +94,15 @@ export function ContactSection() {
     }
   };
 
-  useEffect(() => {
-    loadCaptcha();
-  }, []);
-
   const onSubmit = async (values: ContactFormValues) => {
+    if (!showCaptcha) {
+      const valid = await trigger(['fullName', 'phone', 'email', 'message']);
+      if (!valid) return;
+      setShowCaptcha(true);
+      loadCaptcha();
+      return;
+    }
+
     if (!captcha) return;
     setSubmitError('');
     try {
@@ -140,15 +146,7 @@ export function ContactSection() {
           {/* Info */}
           <Reveal className="lg:col-span-2">
             <div className="space-y-8">
-              {contact?.isAvailable && (
-                <p className="inline-flex items-center gap-2.5 rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-zinc-700">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-70" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  </span>
-                  {contact?.availabilityStatus || 'Available for work'}
-                </p>
-              )}
+
 
               <div className="space-y-3">
                 {links.map((link) => (
@@ -171,7 +169,7 @@ export function ContactSection() {
                 ))}
               </div>
 
-              <p className="max-w-sm text-sm leading-relaxed text-zinc-500">
+              {/* <p className="max-w-sm text-sm leading-relaxed text-zinc-500">
                 Prefer email? Reach me directly at{' '}
                 <a
                   className="font-medium text-zinc-900 underline underline-offset-4"
@@ -180,7 +178,7 @@ export function ContactSection() {
                   {contact?.email || 'hello@via.dev'}
                 </a>
                 .
-              </p>
+              </p> */}
             </div>
           </Reveal>
 
@@ -204,8 +202,9 @@ export function ContactSection() {
                   type="button"
                   onClick={() => {
                     setSent(false);
+                    setShowCaptcha(false);
+                    setCaptcha(null);
                     reset();
-                    loadCaptcha();
                   }}
                   className="btn-minimal-outline mt-8"
                 >
@@ -292,39 +291,43 @@ export function ContactSection() {
                 </div>
 
                 {/* Captcha */}
-                <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-black/10 bg-black/[0.02] p-4 sm:flex-row sm:items-center">
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-xl border border-black/10 bg-white px-4 py-2.5 font-mono text-lg font-semibold text-zinc-900">
-                      {captchaLoading ? '…' : captcha?.question || '…'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={loadCaptcha}
-                      aria-label="New captcha"
-                      disabled={captchaLoading}
-                      className="grid h-10 w-10 place-items-center rounded-xl border border-black/10 bg-white text-zinc-500 transition-colors hover:border-black/30 hover:text-zinc-900 disabled:opacity-50"
-                    >
-                      <RefreshCw className={cn('h-4 w-4', captchaLoading && 'animate-spin')} />
-                    </button>
-                  </div>
-                  <input
-                    id="cf-captcha"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Answer"
-                    aria-invalid={!!errors.captchaAnswer}
-                    className={cn(inputClass, 'flex-1', errors.captchaAnswer && 'border-red-400')}
-                    {...register('captchaAnswer')}
-                  />
-                </div>
-                {errors.captchaAnswer ? (
-                  <p role="alert" className="mt-1.5 text-xs text-red-600">
-                    {errors.captchaAnswer.message}
-                  </p>
-                ) : (
-                  <p className="mt-1.5 text-xs text-zinc-400">
-                    Solve the challenge so we can keep spam out of the inbox.
-                  </p>
+                {showCaptcha && (
+                  <>
+                    <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-black/10 bg-black/[0.02] p-4 sm:flex-row sm:items-center">
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-xl border border-black/10 bg-white px-4 py-2.5 font-mono text-lg font-semibold text-zinc-900">
+                          {captchaLoading ? '…' : captcha?.question || '…'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={loadCaptcha}
+                          aria-label="New captcha"
+                          disabled={captchaLoading}
+                          className="grid h-10 w-10 place-items-center rounded-xl border border-black/10 bg-white text-zinc-500 transition-colors hover:border-black/30 hover:text-zinc-900 disabled:opacity-50"
+                        >
+                          <RefreshCw className={cn('h-4 w-4', captchaLoading && 'animate-spin')} />
+                        </button>
+                      </div>
+                      <input
+                        id="cf-captcha"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Answer"
+                        aria-invalid={!!errors.captchaAnswer}
+                        className={cn(inputClass, 'flex-1', errors.captchaAnswer && 'border-red-400')}
+                        {...register('captchaAnswer')}
+                      />
+                    </div>
+                    {errors.captchaAnswer ? (
+                      <p role="alert" className="mt-1.5 text-xs text-red-600">
+                        {errors.captchaAnswer.message}
+                      </p>
+                    ) : (
+                      <p className="mt-1.5 text-xs text-zinc-400">
+                        Solve the challenge so we can keep spam out of the inbox.
+                      </p>
+                    )}
+                  </>
                 )}
 
                 {submitError && (
@@ -336,15 +339,17 @@ export function ContactSection() {
                 <div className="mt-7 flex items-center justify-between gap-4">
                   <button
                     type="submit"
-                    disabled={isSubmitting || !captcha}
+                    disabled={isSubmitting || (showCaptcha && !captcha)}
                     className="btn-minimal disabled:opacity-60"
                   >
                     {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Send message
+                    {showCaptcha ? 'Submit' : 'Send message'}
                   </button>
-                  <span className="text-xs text-zinc-400">
-                    Protected by a simple math captcha
-                  </span>
+                  {showCaptcha && (
+                    <span className="text-xs text-zinc-400">
+                      Protected by a simple math captcha
+                    </span>
+                  )}
                 </div>
               </form>
             )}

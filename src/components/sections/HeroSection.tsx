@@ -16,7 +16,6 @@ import api from '../../lib/api';
 import {
   AboutSection,
   HeroSection as HeroType,
-  Project,
   Skill,
 } from '../../types';
 import { Skeleton } from '../ui/Skeleton';
@@ -67,14 +66,6 @@ export function HeroSection() {
     },
   });
 
-  const { data: projects } = useQuery({
-    queryKey: ['public-projects'],
-    queryFn: async () => {
-      const { data } = await api.get('/projects');
-      return data.data as Project[];
-    },
-  });
-
   const { data: groupedSkills } = useQuery({
     queryKey: ['public-skills'],
     queryFn: async () => {
@@ -87,24 +78,11 @@ export function HeroSection() {
     const skills = groupedSkills
       ? Object.values(groupedSkills).reduce((n, list) => n + list.length, 0)
       : 0;
-    const years = about?.timelines?.length
-      ? Math.max(
-          1,
-          Math.round(
-            (Date.now() -
-              new Date(
-                about.timelines[about.timelines.length - 1].startDate
-              ).getTime()) /
-              (1000 * 60 * 60 * 24 * 365)
-          )
-        )
-      : 0;
     return [
-      { value: years || 4, label: 'Years experience' },
-      { value: projects?.length ?? 0, label: 'Projects shipped' },
+      { value: 3, label: 'Years experience' },
       { value: skills, label: 'Technologies' },
     ];
-  }, [groupedSkills, projects, about]);
+  }, [groupedSkills]);
 
   if (isLoading) {
     return (
@@ -226,7 +204,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.95, ease: EASE }}
-            className="mt-12 grid grid-cols-3 gap-6 text-center lg:text-left"
+            className="mt-12 grid grid-cols-2 gap-6 text-center lg:text-left"
           >
             {stats.map((s, i) => (
               <StatCard key={s.label} {...s} delay={0.95 + i * 0.1} />
@@ -261,14 +239,7 @@ export function HeroSection() {
               </div>
             )}
 
-            {/* availability badge */}
-            <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3.5 py-1.5 text-xs font-medium text-zinc-700 backdrop-blur">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-70" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              Open to work
-            </div>
+
           </div>
         </motion.div>
       </div>

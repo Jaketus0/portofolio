@@ -9,6 +9,7 @@ import {
   Code2,
   Cpu,
   Database,
+  Download,
   Figma,
   Globe,
   Layers,
@@ -27,7 +28,7 @@ import {
 import React, { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../lib/api';
-import { Service } from '../../types';
+import { AboutSection, Service } from '../../types';
 import { Reveal } from '../ui/Reveal';
 import { SectionHeading } from '../ui/SectionHeading';
 
@@ -66,6 +67,14 @@ export function ServicesSection() {
     queryFn: async () => {
       const { data } = await api.get('/services');
       return data.data as Service[];
+    },
+  });
+
+  const { data: about } = useQuery({
+    queryKey: ['public-about'],
+    queryFn: async () => {
+      const { data } = await api.get('/about');
+      return data.data as AboutSection;
     },
   });
 
@@ -146,6 +155,20 @@ export function ServicesSection() {
             );
           })}
         </div>
+
+        {about?.resumeUrl && (
+          <div className="mt-10 flex justify-center">
+            <a
+              href={about.resumeUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-minimal-outline inline-flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download CV
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );

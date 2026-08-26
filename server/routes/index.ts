@@ -12,6 +12,7 @@ import { settingsRouter } from './settings.routes';
 import { profileRouter } from './profile.routes';
 import { serviceRouter } from './service.routes';
 import { contactSubmissionRouter } from './contact-submission.routes';
+import { activityRouter } from './activity.routes';
 
 export const apiRouter = Router();
 
@@ -28,6 +29,7 @@ apiRouter.use('/media', mediaRouter);
 apiRouter.use('/visitors', visitorRouter);
 apiRouter.use('/settings', settingsRouter);
 apiRouter.use('/profile', profileRouter);
+apiRouter.use('/activity-log', activityRouter);
 
 // Health check
 apiRouter.get('/health', (req, res) => {

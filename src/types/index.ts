@@ -143,3 +143,16 @@ export interface ContactSubmission {
   status: SubmissionStatus;
   createdAt: string;
 }
+
+export interface ActivityLog {
+  id: string;
+  action: string;
+  entity: string;
+  entityId: string | null;
+  details: string | null;
+  createdAt: string;
+  admin: {
+    name: string;
+    avatar: string | null;
+  };
+}
