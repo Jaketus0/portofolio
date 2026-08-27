@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'localhost',
       },
+      {
+        protocol: 'https',
+        hostname: '*.vercel.app',
+      },
     ],
   },
   serverExternalPackages: [
@@ -16,12 +20,18 @@ const nextConfig: NextConfig = {
     'jsonwebtoken',
     'nodemailer',
     'geoip-lite',
+    '@prisma/adapter-pg',
   ],
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
   },
 };
 

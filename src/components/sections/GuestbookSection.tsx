@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Pin, Send } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../../lib/api';
 import { GuestMessage } from '../../types';
@@ -16,10 +16,14 @@ interface FormValues {
   message: string;
 }
 
+const COOLDOWN_SECONDS = 10;
+
 export function GuestbookSection() {
   const queryClient = useQueryClient();
   const [submitted, setSubmitted] = useState(false);
   const [page, setPage] = useState(0);
+  const [cooldown, setCooldown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const PER_PAGE = 4;
   const {
     register,
@@ -43,6 +47,7 @@ export function GuestbookSection() {
     onSuccess: () => {
       reset();
       setSubmitted(true);
+      setCooldown(COOLDOWN_SECONDS);
       queryClient.invalidateQueries({ queryKey: ['public-messages'] });
     },
     onError: (err: any) => {
@@ -50,7 +55,26 @@ export function GuestbookSection() {
     },
   });
 
-  const onSubmit = (values: FormValues) => submit.mutate(values);
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    timerRef.current = setInterval(() => {
+      setCooldown((c) => {
+        if (c <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [cooldown > 0]);
+
+  const onSubmit = (values: FormValues) => {
+    if (cooldown > 0) return;
+    submit.mutate(values);
+  };
 
   const notes = useMemo(() => messages || [], [messages]);
   const totalPages = Math.max(1, Math.ceil(notes.length / PER_PAGE));
@@ -143,15 +167,17 @@ export function GuestbookSection() {
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || cooldown > 0}
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-zinc-900 py-3 text-sm font-medium text-white transition-colors hover:bg-black disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : cooldown > 0 ? (
+                  <span>Try again in {cooldown}s</span>
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                Leave your mark
+                {cooldown === 0 && 'Leave your mark'}
               </button>
             </form>
           </Reveal>

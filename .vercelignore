@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.git/
+*.log
+*.tsbuildinfo
+README.md
+nixpacks.toml
+railway.json
+tmp-*
+uploads/images/*
+uploads/documents/*
+uploads/media/*
+!uploads/images/.gitkeep
+!uploads/documents/.gitkeep
+!uploads/media/.gitkeep
