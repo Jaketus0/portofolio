@@ -9,7 +9,6 @@ export const mediaService = {
   },
 
   async uploadFile(adminId: string, file: Express.Multer.File, folderPath = '/') {
-    // Process image to get width/height if applicable
     let width: number | undefined = undefined;
     let height: number | undefined = undefined;
     
@@ -33,6 +32,29 @@ export const mediaService = {
       url: `/uploads/${path.basename(path.dirname(file.path))}/${file.filename}`,
       width,
       height
+    });
+
+    await activityRepository.create({ action: 'UPLOAD', entity: 'MediaFile', entityId: media.id, adminId });
+    return media;
+  },
+
+  async recordExternalFile(
+    adminId: string,
+    originalName: string,
+    mimeType: string,
+    size: number,
+    subfolder: string,
+    url: string
+  ) {
+    const filename = url.split('/').pop() || originalName;
+    const media = await mediaRepository.create({
+      filename,
+      originalName,
+      mimeType,
+      size,
+      folder: `/${subfolder}`,
+      path: url,
+      url,
     });
 
     await activityRepository.create({ action: 'UPLOAD', entity: 'MediaFile', entityId: media.id, adminId });

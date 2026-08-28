@@ -29,9 +29,19 @@ export default function HeroAdminPage() {
   }, [hero]);
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: FormData) => {
-      const { data } = await api.put('/hero', payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+    mutationFn: async (payload: { fields: Partial<HeroSection>; file?: File }) => {
+      let heroImageUrl = payload.fields.heroImage;
+      if (payload.file) {
+        const fd = new FormData();
+        fd.append('file', payload.file);
+        const { data: uploadData } = await api.post('/media/upload', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        heroImageUrl = uploadData.data.url;
+      }
+      const { data } = await api.put('/hero', {
+        ...payload.fields,
+        heroImage: heroImageUrl,
       });
       return data;
     },
@@ -47,14 +57,12 @@ export default function HeroAdminPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const fd = new FormData();
-    const fields = ['greeting', 'name', 'jobTitle', 'description', 'ctaText', 'ctaLink', 'techStack'] as const;
-    fields.forEach((key) => {
-      const value = formData[key];
-      if (value != null) fd.append(key, value);
+    const fields: Partial<HeroSection> = {};
+    ['greeting', 'name', 'jobTitle', 'description', 'ctaText', 'ctaLink', 'techStack'].forEach((key) => {
+      const value = (formData as Record<string, unknown>)[key];
+      if (value != null) (fields as Record<string, unknown>)[key] = value;
     });
-    if (imageFile) fd.append('heroImage', imageFile);
-    updateMutation.mutate(fd);
+    updateMutation.mutate({ fields, file: imageFile || undefined });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

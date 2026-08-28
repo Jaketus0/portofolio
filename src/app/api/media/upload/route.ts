@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler, jsonCreated, jsonBadRequest, requireAdmin } from '@/lib/api-route';
 import { mediaService } from '@server/services/media.service';
+import { uploadToStorage } from '@/lib/storage';
 
 export const POST = apiHandler(async (req: NextRequest) => {
   const adminOrRes = requireAdmin(req);
@@ -15,16 +16,31 @@ export const POST = apiHandler(async (req: NextRequest) => {
     return jsonBadRequest('No file uploaded');
   }
 
+  // Try Supabase storage first (persistent, works on Vercel)
+  let subfolder = 'media';
+  if (file.type.startsWith('image/')) subfolder = 'images';
+  else if (file.type === 'application/pdf' || file.type.includes('word')) subfolder = 'documents';
+
+  const publicUrl = await uploadToStorage(file, subfolder);
+  if (publicUrl) {
+    const result = await mediaService.recordExternalFile(
+      admin.adminId,
+      file.name,
+      file.type,
+      file.size,
+      subfolder,
+      publicUrl
+    );
+    return jsonCreated(result);
+  }
+
+  // Fallback: local disk (dev only)
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
   const ext = file.name.split('.').pop() || '';
   const filename = `${crypto.randomUUID()}.${ext}`;
   const fs = await import('fs');
   const pathMod = await import('path');
-
-  let subfolder = 'media';
-  if (file.type.startsWith('image/')) subfolder = 'images';
-  else if (file.type === 'application/pdf' || file.type.includes('word')) subfolder = 'documents';
 
   const uploadDir = pathMod.join(process.cwd(), 'uploads', subfolder);
   fs.mkdirSync(uploadDir, { recursive: true });
