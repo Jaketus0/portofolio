@@ -7,6 +7,7 @@ export const createProjectSchema = z.object({
   shortDescription: z.string().min(1, 'Short description is required'),
   fullDescription: z.string().min(1, 'Full description is required'),
   techStack: z.union([z.string(), z.array(z.string())]),
+  coverImage: z.string().nullish(),
   githubUrl: z.string().url().nullish().or(z.literal('')),
   liveUrl: z.string().url().nullish().or(z.literal('')),
   featured: z.boolean().optional().default(false),

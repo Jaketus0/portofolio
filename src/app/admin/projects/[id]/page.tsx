@@ -72,6 +72,7 @@ export default function ProjectFormPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['public-projects'] });
       router.push('/admin/projects');
     },
     onError: (err: any) => {

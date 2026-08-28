@@ -37,6 +37,7 @@ export default function HeroAdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hero'] });
+      queryClient.invalidateQueries({ queryKey: ['public-hero'] });
       alert('Hero updated successfully!');
     },
     onError: (err: any) => {

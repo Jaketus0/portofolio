@@ -40,15 +40,15 @@ export default function MessagesAdminPage() {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {messages?.map((msg) => (
-          <AdminCard key={msg.id} title={`${msg.name} - ${formatDate(msg.createdAt)}`} className="flex flex-col">
+          <AdminCard key={msg.id} title={`${msg.name} - ${formatDate(msg.createdAt)}`} className="relative flex min-h-[16rem] flex-col">
             {msg.pinned && (
               <div className="absolute -top-2 -right-2 z-10 text-primary">
                 <Pin className="h-5 w-5 fill-current transform rotate-45" />
               </div>
             )}
 
-            <div className="flex-grow mb-4">
-              <p className="text-sm text-foreground whitespace-pre-wrap">{msg.message}</p>
+            <div className="flex-grow overflow-y-auto pr-1 mb-4">
+              <p className="text-sm text-foreground whitespace-pre-wrap break-words">{msg.message}</p>
             </div>
 
             <div className="pt-4 border-t border-black/5 flex justify-between items-center">

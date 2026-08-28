@@ -27,7 +27,8 @@ export default function CvAdminPage() {
       const { data } = await api.post('/media/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      const fileUrl = data.data.url;
+      const fileUrl = data.data?.url || data.data?.path;
+      if (!fileUrl) throw new Error('Upload failed — no URL returned');
       await api.put('/about', { resumeUrl: fileUrl });
       return fileUrl;
     },

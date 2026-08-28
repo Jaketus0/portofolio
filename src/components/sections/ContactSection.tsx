@@ -4,20 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-  ArrowUpRight,
   CheckCircle2,
-  Github,
-  Linkedin,
   Loader2,
-  Mail,
-  MessageCircle,
   RefreshCw,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import api from '../../lib/api';
-import { ContactInfo } from '../../types';
 import { cn } from '../../lib/utils';
 import { Reveal } from '../ui/Reveal';
 import { SectionHeading } from '../ui/SectionHeading';
@@ -45,25 +39,10 @@ interface CaptchaChallenge {
   question: string;
 }
 
-const CHANNELS = [
-  { key: 'email', label: 'Email', hint: 'For formal enquiries', icon: Mail, build: (c: ContactInfo) => (c.email ? `mailto:${c.email}` : null) },
-  { key: 'whatsapp', label: 'WhatsApp', hint: 'Fastest response', icon: MessageCircle, build: (c: ContactInfo) => (c.whatsapp ? `https://wa.me/${c.whatsapp.replace(/\D/g, '')}` : null) },
-  { key: 'linkedin', label: 'LinkedIn', hint: 'Connect professionally', icon: Linkedin, build: (c: ContactInfo) => c.linkedin || null },
-  { key: 'github', label: 'GitHub', hint: 'Browse my code', icon: Github, build: (c: ContactInfo) => c.github || null },
-] as const;
-
 const inputClass =
   'w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-black/40 focus:outline-none';
 
 export function ContactSection() {
-  const { data: contact } = useQuery({
-    queryKey: ['public-contact'],
-    queryFn: async () => {
-      const { data } = await api.get('/contact');
-      return data.data as ContactInfo;
-    },
-  });
-
   const [captcha, setCaptcha] = useState<CaptchaChallenge | null>(null);
   const [captchaLoading, setCaptchaLoading] = useState(false);
   const [showCaptcha, setShowCaptcha] = useState(false);
@@ -126,12 +105,6 @@ export function ContactSection() {
     }
   };
 
-  const links = contact
-    ? (CHANNELS as typeof CHANNELS)
-        .map((c) => ({ ...c, url: c.build(contact) }))
-        .filter((c): c is (typeof CHANNELS)[number] & { url: string } => !!c.url)
-    : [];
-
   return (
     <section id="contact" className="px-4 py-14 sm:py-16">
       <div className="mx-auto max-w-6xl">
@@ -142,48 +115,8 @@ export function ContactSection() {
           align="center"
         />
 
-        <div className="grid gap-10 lg:grid-cols-5 lg:items-start">
-          {/* Info */}
-          <Reveal className="lg:col-span-2">
-            <div className="space-y-8">
-
-
-              <div className="space-y-3">
-                {links.map((link) => (
-                  <a
-                    key={link.key}
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-center justify-between rounded-2xl border border-black/10 bg-white p-4 transition-colors hover:border-black/25"
-                  >
-                    <div className="flex items-center gap-3">
-                      <link.icon className="h-5 w-5 text-zinc-900" />
-                      <div>
-                        <p className="text-sm font-medium text-zinc-900">{link.label}</p>
-                        <p className="text-xs text-zinc-500">{link.hint}</p>
-                      </div>
-                    </div>
-                    <ArrowUpRight className="h-4 w-4 text-zinc-400 transition-colors group-hover:text-zinc-900" />
-                  </a>
-                ))}
-              </div>
-
-              {/* <p className="max-w-sm text-sm leading-relaxed text-zinc-500">
-                Prefer email? Reach me directly at{' '}
-                <a
-                  className="font-medium text-zinc-900 underline underline-offset-4"
-                  href={`mailto:${contact?.email || ''}`}
-                >
-                  {contact?.email || 'hello@via.dev'}
-                </a>
-                .
-              </p> */}
-            </div>
-          </Reveal>
-
-          {/* Form */}
-          <Reveal delay={0.1} className="lg:col-span-3">
+        {/* Form */}
+        <Reveal className="mx-auto max-w-2xl">
             {sent ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -354,7 +287,6 @@ export function ContactSection() {
               </form>
             )}
           </Reveal>
-        </div>
       </div>
     </section>
   );

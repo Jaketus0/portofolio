@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { apiHandler, jsonCreated, requireAdmin } from '@/lib/api-route';
+import { apiHandler, jsonCreated, jsonBadRequest, requireAdmin } from '@/lib/api-route';
 import { mediaService } from '@server/services/media.service';
 
 export const POST = apiHandler(async (req: NextRequest) => {
@@ -8,8 +8,13 @@ export const POST = apiHandler(async (req: NextRequest) => {
   const admin = adminOrRes;
 
   const formData = await req.formData();
-  const file = formData.get('file') as File;
+  const file = formData.get('file') as File | null;
   const folder = (formData.get('folder') as string) || '/';
+
+  if (!file) {
+    return jsonBadRequest('No file uploaded');
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
   const ext = file.name.split('.').pop() || '';

@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     checkAuth();
-  }, [pathname]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout, checkAuth }}>

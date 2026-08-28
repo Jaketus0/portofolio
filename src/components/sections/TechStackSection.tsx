@@ -1,24 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Marquee } from '../ui/marquee';
 import { SectionHeading } from '../ui/SectionHeading';
 import api from '../../lib/api';
 import type { HeroSection } from '../../types';
 
-// simple-icons slugs that differ from the stripped-name heuristic
 const SLUG_OVERRIDES: Record<string, string> = {
   nextjs: 'nextdotjs',
   nodejs: 'nodedotjs',
+  reactjs: 'react',
   motion: 'framer',
   framermotion: 'framer',
   expressjs: 'express',
   gcp: 'googlecloud',
+  postgresql: 'postgresql',
+  mariadb: 'mariadb',
 };
 
 const INLINE_LOGOS: Record<string, React.ComponentType> = {
-  // AWS was removed from simple-icons (trademark) — kept inline
   amazonwebservices: AwsLogo,
 };
 
@@ -32,7 +33,7 @@ function AwsLogo() {
     <svg className="h-10 w-auto" version="1.1" viewBox="-45.101 -44.95 390.872 269.7">
       <g transform="translate(-1.668 -1.1)">
         <path
-          d="M86.4 66.4c0 3.7.4 6.7 1.1 8.9.8 2.2 1.8 4.6 3.2 7.2.5.8.7 1.6.7 2.3 0 1-.6 2-1.9 3L83.2 92c-.9.6-1.8.9-2.6.9-1 0-2-.5-3-1.4-1.4-1.5-2.6-3.1-3.6-4.7-1-1.7-2-3.6-3.1-5.9Q59.2 94.7 41.5 94.7c-8.4 0-15.1-2.4-20-7.2s-7.4-11.2-7.4-19.2c0-8.5 3-15.4 9.1-20.6s14.2-7.8 24.5-7.8c3.4 0 6.9.3 10.6.8s7.5 1.3 11.5 2.2v-7.3c0-7.6-1.6-12.9-4.7-16-3.2-3.1-8.6-4.6-16.3-4.6-3.5 0-7.1.4-10.8 1.3s-7.3 2-10.8 3.4c-1.6.7-2.8 1.1-3.5 1.3s-1.2.3-1.6.3c-1.4 0-2.1-1-2.1-3.1v-4.9c0-1.6.2-2.8.7-3.5s1.4-1.4 2.8-2.1Q28.75 5 36.1 3.2C41 1.9 46.2 1.3 51.7 1.3c11.9 0 20.6 2.7 26.2 8.1 5.5 5.4 8.3 13.6 8.3 24.6v32.4zM45.8 81.6c3.3 0 6.7-.6 10.3-1.8s6.8-3.4 9.5-6.4c1.6-1.9 2.8-4 3.4-6.4s1-5.3 1-8.7v-4.2c-2.9-.7-6-1.3-9.2-1.7s-6.3-.6-9.4-.6c-6.7 0-11.6 1.3-14.9 4s-4.9 6.5-4.9 11.5c0 4.7 1.2 8.2 3.7 10.6 2.4 2.5 5.9 3.7 10.5 3.7m80.3 10.8c-1.8 0-3-.3-3.8-1-.8-.6-1.5-2-2.1-3.9L96.7 10.2c-.6-2-.9-3.3-.9-4 0-1.6.8-2.5 2.4-2.5h9.8c1.9 0 3.2.3 3.9 1 .8.6 1.4 2 2 3.9l16.8 66.2 15.6-66.2c.5-2 1.1-3.3 1.9-3.9s2.2-1 4-1h8c1.9 0 3.2.3 4 1 .8.6 1.5 2 1.9 3.9l15.8 67 17.3-67c.6-2 1.3-3.3 2-3.9.8-.6 2.1-1 3.9-1h9.3c1.6 0 2.5.8 2.5 2.5 0 .5-.1 1-.2 1.6s-.3 1.4-.7 2.5l-24.1 77.3q-.9 3-2.1 3.9c-.8.6-2.1 1-3.8 1h-8.6c-1.9 0-3.2-.3-4-1s-1.5-2-1.9-4L156 23l-15.4 64.4c-.5 2-1.1 3.3-1.9 4s-2.2 1-4 1zm128.5 2.7c-5.2 0-10.4-.6-15.4-1.8s-8.9-2.5-11.5-4c-1.6-.9-2.7-1.9-3.1-2.8s-.6-1.9-.6-2.8v-5.1c0-2.1.8-3.1 2.3-3.1q.9 0 1.8.3c.6.2 1.5.6 2.5 1 3.4 1.5 7.1 2.7 11 3.5 4 .8 7.9 1.2 11.9 1.2 6.3 0 11.2-1.1 14.6-3.3s5.2-5.4 5.2-9.5c0-2.8-.9-5.1-2.7-7s-5.2-3.6-10.1-5.2L246 52c-7.3-2.3-12.7-5.7-16-10.2-3.3-4.4-5-9.3-5-14.5q0-6.3 2.7-11.1c1.8-3.2 4.2-6 7.2-8.2 3-2.3 6.4-4 10.4-5.2s8.2-1.7 12.6-1.7c2.2 0 4.5.1 6.7.4 2.3.3 4.4.7 6.5 1.1 2 .5 3.9 1 5.7 1.6q2.7.9 4.2 1.8c1.4.8 2.4 1.6 3 2.5q.9 1.2.9 3.3v4.7c0 2.1-.8 3.2-2.3 3.2-.8 0-2.1-.4-3.8-1.2q-8.55-3.9-19.2-3.9c-5.7 0-10.2.9-13.3 2.8s-4.7 4.8-4.7 8.9c0 2.8 1 5.2 3 7.1s5.7 3.8 11 5.5l14.2 4.5c7.2 2.3 12.4 5.5 15.5 9.6s4.6 8.8 4.6 14c0 4.3-.9 8.2-2.6 11.6-1.8 3.4-4.2 6.4-7.3 8.8-3.1 2.5-6.8 4.3-11.1 5.6-4.5 1.4-9.2 2.1-14.3 2.1"
+          d="M86.4 66.4c0 3.7.4 6.7 1.1 8.9.8 2.2 1.8 4.6 3.2 7.2.5.8.7 1.6.7 2.3 0 1-.6 2-1.9 3L83.2 92c-.9.6-1.8.9-2.6.9-1 0-2-.5-3-1.4-1.4-1.5-2.6-3.1-3.6-4.7-1-1.7-2-3.6-3.1-5.9Q59.2 94.7 41.5 94.7c-8.4 0-15.1-2.4-20-7.2s-7.4-11.2-7.4-19.2c0-8.5 3-15.4 9.1-20.6s14.2-7.8 24.5-7.8c3.4 0 6.9.3 10.6.8s7.5 1.3 11.5 2.2v-7.3c0-7.6-1.6-12.9-4.7-16-3.2-3.1-8.6-4.6-16.3-4.6-3.5 0-7.1.4-10.8 1.3s-7.3 2-10.8 3.4c-1.6.7-2.8 1.1-3.5 1.3s-1.2.3-1.6.3c-1.4 0-2.1-1-2.1-3.1v-4.9c0-1.6.2-2.8.7-3.5s1.4-1.4 2.8-2.1Q28.75 5 36.1 3.2C41 1.9 46.2 1.3 51.7 1.3c11.9 0 20.6 2.7 26.2 8.1 5.5 5.4 8.3 13.6 8.3 24.6v32.4zM45.8 81.6c3.3 0 6.7-.6 10.3-1.8s6.8-3.4 9.5-6.4c1.6-1.9 2.8-4 3.4-6.4s1-5.3 1-8.7v-4.2c-2.9-.7-6-1.3-9.2-1.7s-6.3-.6-9.4-.6c-6.7 0-11.6 1.3-14.9 4s-4.9 6.5-4.9 11.5c0 4.7 1.2 8.2 3.7 10.6 2.4 2.5 5.9 3.7 10.5 3.7m80.3 10.8c-1.8 0-3-.3-3.8-1-.8-.6-1.5-2-2.1-3.9L96.7 10.2c-.6-2-.9-3.3-.9-4 0-1.6.8-2.5 2.4-2.5h9.8c1.9 0 3.2.3 3.9 1 .8.6 1.4 2 2 3.9l16.8 66.2 15.6-66.2c.5-2 1.1-3.3 1.9-3.9s2.2-1 4-1h8c1.9 0 3.2.3 4 1 .8.6 1.5 2 1.9 3.9l15.8 67 17.3-67c.6-2 1.3-3.3 2-3.9.8-.6 2.1-1 3.9-1h9.3c1.6 0 2.5.8 2.5 2.5 0 .5-.1 1-.2 1.6s-.3 1.4-.7 2.5l-24.1 77.3q-.9 3-2.1 3.9c-.8.6-2.1 1-3.8 1h-8.6c-1.9 0-3.2-.3-4-1s-1.5-2-1.9-4L156 23l-15.4 64.4c-.5 2-1.1 3.3-1.9 4s-2.2 1-4 1zm128.5 2.7c-5.2 0-10.4-.6-15.4-1.8s-8.9-2.5-11.5-4c-1.6-.9-2.7-1.9-3.1-2.8s-.6-1.9-.6-2.8v-5.1c0-2.1.8-3.1 2.3-3.1q.9 0 1.8.3c.6.2 1.5.6 2.5 1 3.4 1.5 7.1 2.7 11 3.5 4 .8 7.9 1.2 11.9 1.2 6.3 0 11.2-1.1 14.6-3.3s5.2-5.4 5.2-9.5c0-2.8-.9-5.1-2.7-7s-5.2-3.6-10.1-5.2L246 52c-7.3-2.3-12.7-5.7-16-10.2-3.3-4.4-5-9.3-5-14.5q0-6.3 2.7-11.1c1.8-3.2 4.2-6 7.2-8.2 3-2.3 6.4-4 10.4-5.2s8.2-1.7 12.6-1.7c2.2 0 4.5.1 6.7.4 2.3.3 4.4.7 6.5 1.1 2 .5 3.9 1 5.7 1.6q2.7.9 4.2 1.8c1.4.8 2.4 1.6 3 2.5q.9 1.2.9 3.3v4.7c0 2.1-.8 3.2-2.3 3.2-.8 0-2.1-.4-3.8-1.2q-8.55-3.9-19.2-3.9c-5.7 0-10.2.9-13.3 2.8s-4.7 4.8-4.7 8.9c0 2.8 1 5.2 3 7.1s5.7 3.8 11 5.5l14.2 4.5c7.2 2.3 12.4 5.5 15.5 9.6s4.6 8.8 4.6 14c0 4.3-.9 8.2-2.6 11.6-1.8 3.4-4.2 6.4-7..."
           className="fill-gray-900 dark:fill-white"
         />
         <g>
@@ -51,6 +52,44 @@ function AwsLogo() {
   );
 }
 
+const ICONIFY_SEARCH_URL = 'https://api.iconify.design/search';
+
+interface IconifyResult {
+  icons: string[];
+  categories: string[];
+}
+
+async function searchIconify(query: string): Promise<string | null> {
+  try {
+    const response = await fetch(`${ICONIFY_SEARCH_URL}?query=${encodeURIComponent(query)}&limit=5`);
+    if (!response.ok) return null;
+    const data: IconifyResult = await response.json();
+    if (data.icons && data.icons.length > 0) {
+      return data.icons[0];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveIconUrl(name: string): Promise<string | null> {
+  const slug = toSlug(name);
+  const simpleIconsUrl = `https://cdn.simpleicons.org/${slug}`;
+
+  const probe = await fetch(simpleIconsUrl, { method: 'HEAD', mode: 'no-cors' });
+  if (probe.ok || (probe.status >= 200 && probe.status < 400)) {
+    return simpleIconsUrl;
+  }
+
+  const iconifyIcon = await searchIconify(name);
+  if (iconifyIcon) {
+    return `https://api.iconify.design/${iconifyIcon}.svg?color=%2318181b`;
+  }
+
+  return null;
+}
+
 export function TechStackSection() {
   const { data: hero } = useQuery({
     queryKey: ['public-hero'],
@@ -61,11 +100,28 @@ export function TechStackSection() {
   });
 
   const [failed, setFailed] = useState<Set<string>>(new Set());
+  const [iconUrls, setIconUrls] = useState<Map<string, string | null>>(new Map());
 
   const items = (hero?.techStack || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+
+  const resolveIcons = useCallback(async () => {
+    for (const item of items) {
+      if (iconUrls.has(item) || failed.has(item)) continue;
+      const url = await resolveIconUrl(item);
+      if (url) {
+        setIconUrls((prev) => new Map(prev).set(item, url));
+      } else {
+        setFailed((prev) => new Set(prev).add(item));
+      }
+    }
+  }, [items, iconUrls, failed]);
+
+  useEffect(() => {
+    resolveIcons();
+  }, [resolveIcons]);
 
   if (items.length === 0) return null;
 
@@ -78,37 +134,41 @@ export function TechStackSection() {
         align="center"
       />
       <Marquee pauseOnHover className="sm:mt-8 mt-2">
-      {items.map((item, index) => {
-        const slug = toSlug(item);
-        const broken = failed.has(slug);
-        const Inline = INLINE_LOGOS[slug];
-        return (
-          <div
-            key={`${slug}-${index}`}
-            className="mx-[3rem] flex h-full w-fit items-center justify-start opacity-70 transition-opacity hover:opacity-100"
-            title={item}
-          >
-            {Inline ? (
-              <Inline />
-            ) : !broken ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`https://cdn.simpleicons.org/${slug}`}
-                alt={item}
-                className="h-8 w-auto max-w-[140px] object-contain opacity-70 transition-opacity hover:opacity-100"
-                loading="lazy"
-                onError={() =>
-                  setFailed((prev) => new Set(prev).add(slug))
-                }
-              />
-            ) : (
-              <span className="font-display text-xl font-semibold tracking-tight text-zinc-900">
-                {item}
-              </span>
-            )}
-          </div>
-        );
-      })}
+        {items.map((item, index) => {
+          const slug = toSlug(item);
+          const broken = failed.has(item);
+          const iconUrl = iconUrls.get(item);
+          const Inline = INLINE_LOGOS[slug];
+          return (
+            <div
+              key={`${slug}-${index}`}
+              className="mx-[3rem] flex h-full w-fit items-center justify-start opacity-70 transition-opacity hover:opacity-100"
+              title={item}
+            >
+              {Inline ? (
+                <Inline />
+              ) : iconUrl ? (
+                <img
+                  src={iconUrl}
+                  alt={item}
+                  className="h-8 w-auto max-w-[140px] object-contain opacity-70 transition-opacity hover:opacity-100"
+                  loading="lazy"
+                />
+              ) : broken ? (
+                <span className="font-display text-xl font-semibold tracking-tight text-zinc-900">
+                  {item}
+                </span>
+              ) : (
+                <div className="h-8 w-auto max-w-[140px] flex items-center justify-center text-zinc-400">
+                  <svg className="h-5 w-5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </Marquee>
     </section>
   );

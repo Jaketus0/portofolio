@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../../providers/auth-provider';
 import { AdminSidebar } from '../../components/layout/AdminSidebar';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,12 @@ import { Loader2 } from 'lucide-react';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/login');
+    }
+  }, [isLoading, user, router]);
 
   if (isLoading) {
     return (
@@ -21,9 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-base">

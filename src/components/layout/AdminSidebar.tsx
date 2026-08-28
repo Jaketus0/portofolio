@@ -29,7 +29,6 @@ const MENU_ITEMS = [
   { href: '/admin/services', label: 'Services', icon: Wrench },
   { href: '/admin/cv', label: 'CV / Resume', icon: FileText },
   { href: '/admin/projects', label: 'Projects', icon: Briefcase },
-  { href: '/admin/contact', label: 'Contact Info', icon: Mail },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/contact-submissions', label: 'Contact Form', icon: Send },
   { href: '/admin/media', label: 'Media Library', icon: ImageIcon },

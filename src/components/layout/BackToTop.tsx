@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUp } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
-import { ContactInfo } from '../../types';
+import { SocialLink } from '../../types';
 import { cn } from '../../lib/utils';
 
 export function BackToTop() {
@@ -36,21 +36,28 @@ export function BackToTop() {
 }
 
 export function useFooterSocials() {
-  const { data: contact } = useQuery({
-    queryKey: ['public-contact'],
+  const { data: socials } = useQuery({
+    queryKey: ['public-social-links'],
     queryFn: async () => {
-      const { data } = await api.get('/contact');
-      return data.data as ContactInfo;
+      const { data } = await api.get('/hero/social-links');
+      return data.data as SocialLink[];
     },
     staleTime: 60 * 1000,
   });
 
-  const links = [
-    { key: 'github', label: 'GitHub', href: contact?.github, icon: 'github' as const },
-    { key: 'linkedin', label: 'LinkedIn', href: contact?.linkedin, icon: 'linkedin' as const },
-    { key: 'email', label: 'Email', href: contact?.email ? `mailto:${contact.email}` : null, icon: 'mail' as const },
-    { key: 'whatsapp', label: 'WhatsApp', href: contact?.whatsapp ? `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}` : null, icon: 'message' as const },
-  ].filter((l) => !!l.href);
+  const links = (socials || [])
+    .filter((s) => s.isActive)
+    .map((s) => {
+      const platform = s.platform.toLowerCase();
+      const icon = platform === 'email' || platform === 'mail' ? 'mail' as const
+        : platform === 'whatsapp' ? 'message' as const
+        : platform === 'linkedin' ? 'linkedin' as const
+        : platform === 'github' ? 'github' as const
+        : null;
+      if (!icon) return null;
+      return { key: s.id, label: s.platform, href: s.url, icon };
+    })
+    .filter((l): l is { key: string; label: string; href: string; icon: 'github' | 'linkedin' | 'mail' | 'message' } => !!l);
 
-  return { links, contact };
+  return { links };
 }
