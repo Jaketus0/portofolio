@@ -37,3 +37,20 @@ export async function uploadToStorage(
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+
+export async function createUploadUrl(path: string): Promise<string | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUploadUrl(path, { upsert: false });
+  if (error) {
+    console.error('[Storage] Signed upload failed:', error.message);
+    return null;
+  }
+  return data.signedUrl;
+}
+
+export function getPublicUrl(path: string): string | null {
+  if (!supabase) return null;
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}

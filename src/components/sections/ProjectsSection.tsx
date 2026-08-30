@@ -163,6 +163,15 @@ function CaseStudyModal({
             </div>
           )}
 
+          {project.images && project.images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 p-4">
+              {project.images.map((img) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={img.id} src={img.url} alt={img.caption || project.title} className="w-full rounded-lg object-cover" />
+              ))}
+            </div>
+          )}
+
           <div className="p-6 sm:p-8">
             <div className="flex flex-wrap items-center gap-3">
               {project.featured && (

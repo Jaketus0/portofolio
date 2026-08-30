@@ -19,6 +19,7 @@ import {
   Skill,
 } from '../../types';
 import { Skeleton } from '../ui/Skeleton';
+import { FlowButton } from '../ui/flow-button';
 
 const SOCIAL_ICONS: Record<string, typeof Github> = {
   github: Github,
@@ -166,12 +167,8 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.75, ease: EASE }}
             className="mt-9 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
           >
-            <a href={hero.ctaLink || '#projects'} className="btn-minimal group">
-              {hero.ctaText || 'View my work'}
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </a>
-            <a href="#contact" className="btn-minimal-outline">
-              Get in touch
+            <a href={hero.ctaLink || '#projects'} className="inline-flex">
+              <FlowButton text={hero.ctaText || 'View my work'} />
             </a>
           </motion.div>
 
@@ -225,8 +222,8 @@ export function HeroSection() {
               <img
                 src={image}
                 alt={hero.name}
-                className="h-full w-full object-cover"
-                loading="eager"
+className="h-full w-full object-cover"
+                 loading="eager"
               />
             ) : (
               <div className="grid h-full w-full place-items-center">

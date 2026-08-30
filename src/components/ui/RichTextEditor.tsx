@@ -3,11 +3,12 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import { Extension } from '@tiptap/core';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AlignCenter,
   AlignLeft,
@@ -22,7 +23,23 @@ import {
   Strikethrough,
   Underline as UnderlineIcon,
 } from 'lucide-react';
-import api from '../../lib/api';
+import { uploadFile } from '../../lib/direct-upload';
+import { ImageCropper } from './ImageCropper';
+const EditableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: { default: '100%', renderHTML: (attrs) => ({ width: attrs.width, style: `width:${attrs.width};max-width:100%;height:auto` }), parseHTML: (element) => element.getAttribute('width') || '100%' },
+    };
+  },
+});
+
+const ImageSize = Extension.create({
+  name: 'imageSize',
+  addKeyboardShortcuts() {
+    return { 'Mod-Shift-1': () => this.editor.commands.updateAttributes('image', { width: '50%' }), 'Mod-Shift-2': () => this.editor.commands.updateAttributes('image', { width: '100%' }) };
+  },
+});
 
 interface RichTextEditorProps {
   value: string;
@@ -32,12 +49,14 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Underline,
-      Image,
+      EditableImage,
+      ImageSize,
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: placeholder || 'Tulis deskripsi…' }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -47,6 +66,18 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     editorProps: {
       attributes: {
         class: 'rich-content min-h-[220px] px-4 py-3 focus:outline-none',
+      },
+      handlePaste: (_view, event) => {
+        const file = Array.from(event.clipboardData?.files || []).find((item) => item.type.startsWith('image/'));
+        if (!file) return false;
+        void uploadImage(file);
+        return true;
+      },
+      handleDrop: (_view, event) => {
+        const file = Array.from(event.dataTransfer?.files || []).find((item) => item.type.startsWith('image/'));
+        if (!file) return false;
+        void uploadImage(file);
+        return true;
       },
     },
   });
@@ -76,21 +107,19 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
-  const uploadImage = async (file: File) => {
-    const fd = new FormData();
-    fd.append('file', file);
+  async function uploadImage(file: File) {
     try {
-      const { data } = await api.post('/media/upload', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      editor.chain().focus().setImage({ src: data.data.url }).run();
+      const data = await uploadFile(file);
+      editor?.chain().focus().setImage({ src: data.url } as any).run();
     } catch {
       alert('Upload gambar gagal');
     }
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-input bg-white focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+    <>
+      {cropFile && <ImageCropper file={cropFile} aspect={16 / 9} onCancel={() => setCropFile(null)} onDone={(file) => { setCropFile(null); uploadImage(file); }} />}
+      <div className="overflow-hidden rounded-lg border border-input bg-white focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
       <div className="flex flex-wrap items-center gap-1 border-b border-black/10 bg-black/[0.02] px-2 py-1.5">
         <button type="button" aria-label="Bold" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive('bold'))}><Bold className="h-4 w-4" /></button>
         <button type="button" aria-label="Italic" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive('italic'))}><Italic className="h-4 w-4" /></button>
@@ -118,6 +147,18 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
 
         <button type="button" aria-label="Insert link" onClick={addLink} className={btn(editor.isActive('link'))}><Link2 className="h-4 w-4" /></button>
         <button type="button" aria-label="Insert image" onClick={() => fileRef.current?.click()} className={btn(false)}><ImagePlus className="h-4 w-4" /></button>
+        <span className="mx-1 h-5 w-px bg-black/10" />
+        <button type="button" className={btn(false) + ' w-auto px-2 text-xs'} onClick={() => editor.chain().focus().updateAttributes('image', { width: '25%' }).run()}>25%</button>
+        <button type="button" className={btn(false) + ' w-auto px-2 text-xs'} onClick={() => editor.chain().focus().updateAttributes('image', { width: '50%' }).run()}>50%</button>
+        <button type="button" className={btn(false) + ' w-auto px-2 text-xs'} onClick={() => editor.chain().focus().updateAttributes('image', { width: '75%' }).run()}>75%</button>
+        <button type="button" className={btn(false) + ' w-auto px-2 text-xs'} onClick={() => editor.chain().focus().updateAttributes('image', { width: '100%' }).run()}>100%</button>
+        <button type="button" className={btn(false) + ' w-auto px-2 text-xs'} onClick={() => {
+          const width = window.prompt('Width %', '100');
+          if (!width) return;
+          const value = Number(width);
+          if (Number.isNaN(value) || value < 10 || value > 100) return;
+          editor.chain().focus().updateAttributes('image', { width: `${value}%` }).run();
+        }}>Custom</button>
 
         <input
           ref={fileRef}
@@ -126,7 +167,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
           className="hidden"
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
-              uploadImage(e.target.files[0]);
+              void uploadImage(e.target.files[0]);
               e.target.value = '';
             }
           }}
@@ -135,5 +176,6 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
 
       <EditorContent editor={editor} />
     </div>
+    </>
   );
 }

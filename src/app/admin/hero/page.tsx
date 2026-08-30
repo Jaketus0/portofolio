@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../lib/api';
+import { uploadFile } from '../../../lib/direct-upload';
+import { ImageCropper } from '../../../components/ui/ImageCropper';
 import { AdminCard } from '../../../components/ui/AdminCard';
 import { AdminInput } from '../../../components/ui/AdminInput';
 import { AdminTextarea } from '../../../components/ui/AdminTextarea';
@@ -13,6 +15,7 @@ export default function HeroAdminPage() {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Partial<HeroSection>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const { data: hero, isLoading } = useQuery({
     queryKey: ['hero'],
@@ -32,12 +35,8 @@ export default function HeroAdminPage() {
     mutationFn: async (payload: { fields: Partial<HeroSection>; file?: File }) => {
       let heroImageUrl = payload.fields.heroImage;
       if (payload.file) {
-        const fd = new FormData();
-        fd.append('file', payload.file);
-        const { data: uploadData } = await api.post('/media/upload', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        heroImageUrl = uploadData.data.url;
+        const uploadData = await uploadFile(payload.file);
+        heroImageUrl = uploadData.url;
       }
       const { data } = await api.put('/hero', {
         ...payload.fields,
@@ -71,7 +70,7 @@ export default function HeroAdminPage() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setImageFile(e.target.files[0]);
+      setCropFile(e.target.files[0]);
     }
   };
 
@@ -79,6 +78,7 @@ export default function HeroAdminPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
+      {cropFile && <ImageCropper file={cropFile} aspect={4 / 5} onCancel={() => setCropFile(null)} onDone={(file) => { setImageFile(file); setCropFile(null); }} />}
       <h1 className="text-2xl font-semibold text-foreground">Hero Section</h1>
 
       <AdminCard title="Edit Hero Content">

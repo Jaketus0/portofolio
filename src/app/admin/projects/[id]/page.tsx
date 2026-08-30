@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../../lib/api';
+import { uploadFile } from '../../../../lib/direct-upload';
 import { AdminCard } from '../../../../components/ui/AdminCard';
 import { AdminInput } from '../../../../components/ui/AdminInput';
 import { AdminTextarea } from '../../../../components/ui/AdminTextarea';
@@ -82,12 +83,8 @@ export default function ProjectFormPage() {
 
   const uploadCover = useMutation({
     mutationFn: async (file: File) => {
-      const fd = new FormData();
-      fd.append('file', file);
-      const { data } = await api.post('/media/upload', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return data.data.url as string;
+const data = await uploadFile(file);
+       return data.url;
     },
     onSuccess: (url) => {
       setFormData((prev) => ({ ...prev, coverImage: url }));
@@ -159,8 +156,33 @@ export default function ProjectFormPage() {
                 <img src={formData.coverImage} alt="Cover preview" className="mt-1 h-32 w-full rounded-lg object-cover" />
               )}
             </div>
+          </div>
 
-            <AdminInput
+          {project?.images !== undefined && !isNew && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Gallery</label>
+              <input type="file" accept="image/*" multiple onChange={async (e) => {
+                for (const f of Array.from(e.target.files || [])) {
+                  const d = await uploadFile(f);
+                  await api.post(`/projects/${projectId}/images`, { url: d.url });
+                }
+                queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] });
+                (e.target as HTMLInputElement).value = '';
+              }} className="block w-full rounded-lg border border-input bg-white px-3 py-2 text-sm" />
+              <div className="grid grid-cols-3 gap-2">
+                {(project.images || []).map((img: any) => (
+                  <div key={img.id} className="group relative overflow-hidden rounded-lg border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.url} alt="" className="aspect-video w-full object-cover" />
+                    <button type="button" onClick={async () => { await api.delete(`/projects/${projectId}/images/${img.id}`); queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] }); }} className="absolute right-1 top-1 rounded bg-red-600 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100">Delete</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <AdminInput
               label="Live URL (opsional)"
               value={formData.liveUrl || ''}
               onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
